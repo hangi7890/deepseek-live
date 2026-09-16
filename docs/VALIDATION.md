@@ -1,6 +1,6 @@
 # Validation record
 
-Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium browser. CI is configured for Node 22 and 24; a local run on Node 25 is not evidence that remote CI has run.
+Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium browser. The public repository is [hangi7890/deepseek-live](https://github.com/hangi7890/deepseek-live). Remote CI on **Node 22 and Node 24 passed** for implementation commit `8fa16a8`: [verified workflow run](https://github.com/hangi7890/deepseek-live/actions/runs/35088349352).
 
 ## Automated checks
 
@@ -40,7 +40,6 @@ An attempted 390px browser viewport override did not apply in this browser envir
 - Actual microphone permission, recognition quality, speaker echo, interruption audio, and TTS audibility on physical devices.
 - End-to-end voice latency, p50/p95, cost, sustained load, and comparison with GPT-Live.
 - Docker runtime: packaging provided, container not executed in this environment.
-- Remote GitHub CI or a public release, until the repository is actually published and the workflow runs.
 
 ## Reproduce a real voice check
 

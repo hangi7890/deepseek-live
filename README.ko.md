@@ -10,7 +10,7 @@ GPT-Live의 대화와 추론 분리에서 아이디어를 얻었습니다. **GPT
 
 ## 바로 실행
 
-Node.js 22 이상이 필요합니다. 외부 패키지 설치는 필요 없습니다.
+Node.js 22.9 이상이 필요합니다. 외부 패키지 설치는 필요 없습니다.
 
 ```bash
 git clone https://github.com/hangi7890/deepseek-live.git

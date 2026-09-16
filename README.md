@@ -11,6 +11,7 @@ An open-source voice workspace with interruptible replies and independent backgr
 ![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-b8e5a7?style=flat-square&labelColor=18221b)
 ![MIT License](https://img.shields.io/badge/License-MIT-b8e5a7?style=flat-square&labelColor=18221b)
 ![Runtime dependencies: zero](https://img.shields.io/badge/Runtime_dependencies-zero-b8e5a7?style=flat-square&labelColor=18221b)
+[![CI](https://github.com/hangi7890/deepseek-live/actions/workflows/ci.yml/badge.svg)](https://github.com/hangi7890/deepseek-live/actions/workflows/ci.yml)
 
 </div>
 
@@ -29,7 +30,7 @@ An open-source voice workspace with interruptible replies and independent backgr
 
 ## Try it in 30 seconds
 
-Requires **Node.js 22+** (22 or 24 LTS recommended).
+Requires **Node.js 22.9+** (latest 22 or 24 LTS recommended).
 
 ```bash
 git clone https://github.com/hangi7890/deepseek-live.git
