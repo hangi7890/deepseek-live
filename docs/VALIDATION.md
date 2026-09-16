@@ -6,7 +6,7 @@ Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium brow
 
 `npm run check`: JavaScript syntax checks passed.
 
-`npm test`: **25 tests passed** after the first stability milestone (the original release had 16), including:
+`npm test`: **30 tests passed** after the recovery and mobile milestone (the original release had 16), including:
 
 - Fragmented UTF-8 Korean and CRLF SSE; multiline data and heartbeat comments.
 - Oversized or truncated SSE frames; missing provider terminal marker.
@@ -20,7 +20,7 @@ Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium brow
 - Active request concurrency limit.
 - Actual client source executed against deterministic DOM, recognition, synthesis, timer, and fetch doubles: microphone restart races, pending transcript cancellation, rapid request replacement, independent analysis cancellation, session reset, stale speech callbacks, muted chunks, incomplete streams, and analysis concurrency.
 
-The nine client tests were also run against the original `a2b39ee` app source in an isolated temporary fixture. Two failed: an old recognition error aborted the replacement microphone, and a cancelled utterance emitted a late error notice. Both pass with the fixes. The complete current suite passes 25/25 locally. This proves the simulated lifecycle cases, not real microphone or acoustic quality. Remote CI for these changes must be checked separately from the initial release CI linked above.
+The first nine client tests were also run against the original `a2b39ee` app source in an isolated temporary fixture. Two failed: an old recognition error aborted the replacement microphone, and a cancelled utterance emitted a late error notice. Both pass with the fixes. Five further client tests cover retained drafts on missing authentication/offline configuration/oversized input, explicit retry after a non-JSON HTTP failure, unsupported or denied recognition, and IME/keyboard behavior. The full current suite passes 30/30 locally. This proves the simulated lifecycle cases, not real microphone or acoustic quality. Remote CI for these changes must be checked separately from the initial release CI linked above.
 
 Provider tests use a mock fetch implementation; server tests run real local HTTP streams with deterministic providers. They do not incur API charges or establish real-world model performance.
 
@@ -35,12 +35,14 @@ Provider tests use a mock fetch implementation; server tests run real local HTTP
 - Browser error/warning log was empty during the checked flow.
 - Layout observed at desktop and 884px width, with the background panel moving beneath the two main panels and no horizontal overflow.
 
-An attempted 390px browser viewport override did not apply in this browser environment (the measured width remained 884px). The small-screen CSS is implemented, but **a true phone-width visual check remains outstanding**.
+A follow-up viewport override successfully applied at **390 × 844 CSS pixels**. DOM measurements confirmed `innerWidth === scrollWidth === 390`. Main panels, the settings dialog, and composer were visually inspected; Enter submitted a Korean-text question and received a complete scripted response. After mobile control improvements, the send button measured 44 × 44px and composer text measured 16px. This is desktop Chromium with a narrow viewport, not a physical phone or mobile keyboard test.
+
+A fresh temporary copy of tracked source, without `.env` or `node_modules`, started the application HTTP server and served HTML, demo configuration, and completed English/Korean demo streams. No package installation or provider key was needed. This check used the exported server factory; the exact `npm start` command and physical-device behavior are separate checks.
 
 ## Not verified
 
 - Live DeepSeek requests: no API key configured at validation time.
-- Actual microphone permission, recognition quality, speaker echo, interruption audio, and TTS audibility on physical devices.
+- Actual microphone permission, recognition quality, speaker echo, interruption audio, and TTS audibility on physical devices. Permission errors and unsupported recognition were tested with platform doubles only.
 - End-to-end voice latency, p50/p95, cost, sustained load, and comparison with GPT-Live.
 - Docker runtime: packaging provided, container not executed in this environment.
 
@@ -52,5 +54,5 @@ An attempted 390px browser viewport override did not apply in this browser envir
 4. Interrupt mid-sentence. Confirm speech stops and no old queued sentence resumes.
 5. Start Deep think, ask a separate question, interrupt it, then wait for the analysis.
 6. Cancel a second analysis; confirm it cannot later show Complete.
-7. Try denied microphone permission, a revoked provider key, offline networking, and a 390px screen.
+7. Try denied microphone permission, a revoked provider key, offline networking, and a physical phone (the 390px desktop viewport has been checked).
 8. Record device, browser, model, network, sample count, and failures. Measure first audible output separately from first text token timing.

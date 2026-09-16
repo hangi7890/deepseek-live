@@ -58,7 +58,10 @@ async function stream(messages, deep, controller, onEvent) {
   const res = await fetch('/api/respond', { method: 'POST', signal: controller.signal,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify({ messages, deep, language }) });
-  if (!res.ok) { const data = await res.json(); throw new Error(data.error || `Request failed (${res.status}).`); }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data.error === 'string' ? data.error : `Request failed (HTTP ${res.status}). Please try again.`);
+  }
   let done = false;
   for await (const frame of readSSE(res.body)) {
     if (controller.signal.aborted) return;
@@ -69,12 +72,13 @@ async function stream(messages, deep, controller, onEvent) {
   }
   if (!done && !controller.signal.aborted) throw new Error('Connection ended early. Please try again.');
 }
-async function send(text, deep = deepMode) {
+async function send(text, deep = deepMode, onAccepted = () => {}) {
   text = text.trim(); if (!text) return;
   if (!config) { notice('Waiting for the server. Refresh if the connection does not recover.'); return; }
   if (config.authRequired && !ui['access-token'].value.trim()) { ui.settings.showModal(); notice('Enter your workspace access token to continue.'); return; }
   if (text.length > 8000) { notice('Keep each message under 8,000 characters.'); return; }
-  if (deep) { startJob(text); return; }
+  if (deep) { startJob(text, onAccepted); return; }
+  onAccepted();
   interrupt(false); const generation = epoch;
   const messages = historyFor(text);
   message('user', text); turn++; ui['turn-count'].textContent = String(turn).padStart(2, '0');
@@ -91,7 +95,12 @@ async function send(text, deep = deepMode) {
     });
     if (generation === epoch && answer) history = [...messages, { role: 'assistant', content: answer.slice(0, 8000) }].slice(-14);
   } catch (error) {
-    if (generation === epoch && !controller.signal.aborted) { view.status.textContent = error.message; stopSpeech(); notice(error.message); }
+    if (generation === epoch && !controller.signal.aborted) {
+      view.status.textContent = error.message; stopSpeech(); notice(error.message);
+      const retry = document.createElement('button'); retry.className = 'retry-button'; retry.textContent = 'Retry reply';
+      retry.onclick = () => { retry.remove(); void send(text, false); };
+      view.article.append(retry);
+    }
   } finally { if (generation === epoch) { conversation = null; if (!speaking) idle(); } }
 }
 function updateJobs() {
@@ -99,8 +108,9 @@ function updateJobs() {
   $('#task-count').textContent = String(jobs.size); $('#job-metric').textContent = active ? `${active} working` : 'Ready';
   $('#no-jobs').hidden = jobs.size > 0;
 }
-async function startJob(text) {
+async function startJob(text, onAccepted = () => {}) {
   if ([...jobs.values()].filter(j => j.running).length >= 2) { notice('Two analyses are already running. Cancel one or wait for a result.'); return; }
+  onAccepted();
   // Bound retained DOM and job state in long sessions.
   if (jobs.size >= 8) { const oldest = [...jobs.values()].find(j => !j.running); if (oldest) { oldest.element.remove(); jobs.delete(oldest.id); } }
   const id = crypto.randomUUID(), controller = new AbortController();
@@ -168,7 +178,10 @@ function loadVoices() {
   if ([...ui['voice-select'].options].some(o => o.value === selectedVoice)) ui['voice-select'].value = selectedVoice;
   else selectedVoice = '';
 }
-$('#composer').onsubmit = event => { event.preventDefault(); const text = ui.prompt.value; if (text.trim()) { ui.prompt.value = ''; void send(text); } };
+$('#composer').onsubmit = event => {
+  event.preventDefault(); const text = ui.prompt.value;
+  if (text.trim()) void send(text, deepMode, () => { if (ui.prompt.value === text) ui.prompt.value = ''; });
+};
 ui.prompt.onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('#composer').requestSubmit(); } };
 ui.mic.onclick = startListening; ui.interrupt.onclick = () => interrupt();
 ui['deep-toggle'].onclick = () => setDeep(!deepMode);

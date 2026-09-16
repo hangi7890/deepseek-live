@@ -85,6 +85,50 @@ test('truncated response fails visibly and is excluded from future context', asy
 test('analysis concurrency is bounded and a freed slot can be reused', async t => {
   const app = await setup(t); await app.send('one', true); await app.send('two', true); await app.send('three', true);
   assert.equal(app.requests.length, 2); assert.equal(app.jobs().length, 2);
+  assert.equal(app.get('prompt').value, 'three');
   app.jobs()[0].children[3].onclick(); await app.send('replacement', true);
   assert.equal(app.requests.length, 3);
+});
+
+test('missing workspace token preserves draft until authentication is supplied', async t => {
+  const app = await setup(t, { authRequired: true }); await app.send('keep my question');
+  assert.equal(app.get('settings').open, true); assert.equal(app.get('prompt').value, 'keep my question'); assert.equal(app.requests.length, 0);
+  app.get('access-token').value = 'workspace-token'; app.get('composer').requestSubmit(); await app.flush();
+  assert.equal(app.get('prompt').value, ''); assert.equal(app.requests[0].payload.messages.at(-1).content, 'keep my question');
+  assert.equal(app.requests[0].headers.Authorization, 'Bearer workspace-token');
+});
+
+test('unavailable config and oversized input preserve the draft', async t => {
+  const offline = await setup(t, { configAvailable: false }); await offline.send('offline draft');
+  assert.equal(offline.get('prompt').value, 'offline draft'); assert.equal(offline.requests.length, 0);
+  const app = await setup(t); const long = 'x'.repeat(8001); await app.send(long);
+  assert.equal(app.get('prompt').value, long); assert.equal(app.requests.length, 0);
+});
+
+test('HTTP failure has an explicit retry without overwriting a newer draft', async t => {
+  const app = await setup(t); app.failNext(502, '<html>Gateway failure</html>');
+  await app.send('original question');
+  const failure = app.messages()[1]; assert.match(failure.children[2].textContent, /HTTP 502/);
+  assert.equal(failure.children[3].textContent, 'Retry reply');
+  app.get('prompt').value = 'next draft'; failure.children[3].onclick(); await app.flush();
+  assert.equal(app.get('prompt').value, 'next draft'); assert.equal(app.requests[1].payload.messages.at(-1).content, 'original question');
+  app.requests[1].emit('token', { text: 'Recovered.' }); app.requests[1].done(); await app.flush();
+  assert.equal(app.messages().at(-1).children[1].textContent, 'Recovered.');
+});
+
+test('unsupported speech and denied microphone leave typed conversation usable', async t => {
+  const unsupported = await setup(t, { speechSupported: false }); assert.equal(unsupported.get('mic').disabled, true);
+  await unsupported.send('typed'); assert.equal(unsupported.requests.length, 1);
+  const app = await setup(t); app.get('mic').onclick(); app.recognizers[0].onerror({ error: 'not-allowed' });
+  assert.equal(app.get('mic-state').textContent, 'MIC OFF'); assert.match(app.get('notice').textContent, /permission denied/);
+  await app.send('still usable'); assert.equal(app.requests.length, 1);
+});
+
+test('IME composition and Shift+Enter do not send; Enter and Escape operate the conversation', async t => {
+  const app = await setup(t); app.get('prompt').value = '한국어';
+  const event = { key: 'Enter', preventDefault() {}, shiftKey: false, isComposing: true };
+  app.get('prompt').onkeydown(event); app.get('prompt').onkeydown({ ...event, isComposing: false, shiftKey: true });
+  assert.equal(app.requests.length, 0);
+  app.get('prompt').onkeydown({ ...event, isComposing: false }); await app.flush(); assert.equal(app.requests.length, 1);
+  app.events.keydown({ key: 'Escape' }); assert.equal(app.requests[0].signal.aborted, true);
 });

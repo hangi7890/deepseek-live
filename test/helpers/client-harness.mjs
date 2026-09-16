@@ -23,8 +23,8 @@ class Element {
   requestSubmit() { this.onsubmit?.({ preventDefault() {} }); }
 }
 
-export async function client({ speechSupported = true, authRequired = false } = {}) {
-  const elements = new Map(), requests = [], recognizers = [], utterances = [], timers = new Map(), events = {};
+export async function client({ speechSupported = true, authRequired = false, configAvailable = true } = {}) {
+  const elements = new Map(), requests = [], recognizers = [], utterances = [], timers = new Map(), events = {}, failures = [];
   let timerId = 0;
   const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   get('speak').checked = true; get('language').value = 'en';
@@ -45,7 +45,7 @@ export async function client({ speechSupported = true, authRequired = false } = 
     setTimeout: (callback, delay) => { const id = ++timerId; timers.set(id, { callback, delay }); return id; },
     clearTimeout: id => timers.delete(id),
     fetch: async (url, options) => {
-      if (url === '/api/config') return Response.json({ demo: false, model: 'test', authRequired });
+      if (url === '/api/config') return configAvailable ? Response.json({ demo: false, model: 'test', authRequired }) : new Response('', { status: 503 });
       let streamController, closed = false;
       const body = new ReadableStream({ start(controller) { streamController = controller; }, cancel() { closed = true; } });
       const request = {
@@ -55,6 +55,7 @@ export async function client({ speechSupported = true, authRequired = false } = 
         done() { this.emit('done', { totalMs: 100, firstTokenMs: 20 }); this.close(); },
       };
       requests.push(request);
+      if (failures.length) { const failure = failures.shift(); request.close(); return new Response(failure.body, { status: failure.status }); }
       return new Response(body, { headers: { 'Content-Type': 'text/event-stream' } });
     },
   });
@@ -62,6 +63,7 @@ export async function client({ speechSupported = true, authRequired = false } = 
   await new vm.Script(`(async () => {${source.replace(/^import .*\n/, '')}\n})()`, { filename: 'public/app.js' }).runInContext(context);
   return {
     get, requests, recognizers, utterances, events,
+    failNext(status, body) { failures.push({ status, body }); },
     async flush() { for (let i = 0; i < 4; i++) await new Promise(resolve => setImmediate(resolve)); },
     async send(text, deep = false) { get('deep-toggle').attributes['aria-pressed'] === String(deep) || get('deep-toggle').onclick(); get('prompt').value = text; get('composer').requestSubmit(); await this.flush(); },
     runTimers(delay) { for (const [id, timer] of [...timers]) if (timer.delay === delay) { timers.delete(id); timer.callback(); } },
