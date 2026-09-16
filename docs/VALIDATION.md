@@ -20,7 +20,7 @@ Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium brow
 - Active request concurrency limit.
 - Actual client source executed against deterministic DOM, recognition, synthesis, timer, and fetch doubles: microphone restart races, pending transcript cancellation, rapid request replacement, independent analysis cancellation, session reset, stale speech callbacks, muted chunks, incomplete streams, and analysis concurrency.
 
-The first nine client tests were also run against the original `a2b39ee` app source in an isolated temporary fixture. Two failed: an old recognition error aborted the replacement microphone, and a cancelled utterance emitted a late error notice. Both pass with the fixes. Five further client tests cover retained drafts on missing authentication/offline configuration/oversized input, explicit retry after a non-JSON HTTP failure, unsupported or denied recognition, and IME/keyboard behavior. The full current suite passes 30/30 locally. This proves the simulated lifecycle cases, not real microphone or acoustic quality. Remote CI for these changes must be checked separately from the initial release CI linked above.
+The first nine client tests were also run against the original `a2b39ee` app source in an isolated temporary fixture. Two failed: an old recognition error aborted the replacement microphone, and a cancelled utterance emitted a late error notice. Both pass with the fixes. Five further client tests cover retained drafts on missing authentication/offline configuration/oversized input, explicit retry after a non-JSON HTTP failure, unsupported or denied recognition, and IME/keyboard behavior. The full current suite passes 30/30 locally. This proves the simulated lifecycle cases, not real microphone or acoustic quality. The suite and syntax checks also passed on Node 22 and 24 for `ade35c4`: [packaging milestone CI](https://github.com/hangi7890/deepseek-live/actions/runs/35092667370).
 
 Provider tests use a mock fetch implementation; server tests run real local HTTP streams with deterministic providers. They do not incur API charges or establish real-world model performance.
 
@@ -37,14 +37,18 @@ Provider tests use a mock fetch implementation; server tests run real local HTTP
 
 A follow-up viewport override successfully applied at **390 × 844 CSS pixels**. DOM measurements confirmed `innerWidth === scrollWidth === 390`. Main panels, the settings dialog, and composer were visually inspected; Enter submitted a Korean-text question and received a complete scripted response. After mobile control improvements, the send button measured 44 × 44px and composer text measured 16px. This is desktop Chromium with a narrow viewport, not a physical phone or mobile keyboard test.
 
-A fresh temporary copy of tracked source, without `.env` or `node_modules`, started the application HTTP server and served HTML, demo configuration, and completed English/Korean demo streams. No package installation or provider key was needed. This check used the exported server factory; the exact `npm start` command and physical-device behavior are separate checks.
+## Installation and container checks
+
+A fresh shallow clone of the public repository at `ade35c4`, without `.env` or `node_modules`, passed `npm run smoke` on macOS Node 25.9.0. This harness launches the documented `npm start` command, checks HTML and JavaScript delivery, verifies `/.env` is inaccessible, and requires complete English/Korean scripted SSE responses. No package installation or provider key was needed. The harness explicitly disables the provider key and checks demo mode before making requests; it does not validate a real provider.
+
+The same smoke check passed in GitHub Ubuntu CI on Node 22 and 24. A separate Docker job built the supplied Dockerfile, started the container with a test access token, verified unauthenticated requests were rejected, and completed authenticated English/Korean demo streams. All three jobs passed for `ade35c4`: [workflow evidence](https://github.com/hangi7890/deepseek-live/actions/runs/35092667370). Docker was tested remotely on Ubuntu, not locally on macOS.
 
 ## Not verified
 
 - Live DeepSeek requests: no API key configured at validation time.
 - Actual microphone permission, recognition quality, speaker echo, interruption audio, and TTS audibility on physical devices. Permission errors and unsupported recognition were tested with platform doubles only.
 - End-to-end voice latency, p50/p95, cost, sustained load, and comparison with GPT-Live.
-- Docker runtime: packaging provided, container not executed in this environment.
+- Docker on macOS and other CPU architectures; the Ubuntu CI container check above passed.
 
 ## Reproduce a real voice check
 
