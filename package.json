@@ -8,8 +8,9 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
     "dev": "node --watch --env-file-if-exists=.env server.mjs",
+    "smoke": "node scripts/smoke.mjs",
     "test": "node --test test/protocol.test.mjs test/server.test.mjs test/client.test.mjs",
-    "check": "node --check server.mjs && node --check public/app.js && node --check lib/provider.mjs && node --check lib/validation.mjs && node --check public/protocol.js"
+    "check": "node --check server.mjs && node --check public/app.js && node --check lib/provider.mjs && node --check lib/validation.mjs && node --check public/protocol.js && node --check scripts/smoke.mjs"
   },
   "license": "MIT"
 }

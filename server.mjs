@@ -91,6 +91,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const host = process.env.HOST || '127.0.0.1';
   if (!['127.0.0.1', 'localhost', '::1'].includes(host) && (!process.env.LIVE_ACCESS_TOKEN || process.env.LIVE_ACCESS_TOKEN.length < 24)) throw new Error('Non-loopback hosting requires LIVE_ACCESS_TOKEN with at least 24 characters.');
   const server = createServer();
-  server.listen(Number(process.env.PORT || 3000), host, () => console.log(`DeepSeek Live → http://${host}:${process.env.PORT || 3000} (${process.env.DEEPSEEK_API_KEY ? 'live provider' : 'scripted demo'})`));
+  server.listen(Number(process.env.PORT || 3000), host, () => console.log(`DeepSeek Live → http://${host.includes(':') ? `[${host}]` : host}:${server.address().port} (${process.env.DEEPSEEK_API_KEY ? 'live provider' : 'scripted demo'})`));
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { server.close(); server.closeAllConnections(); });
 }

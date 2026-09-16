@@ -117,9 +117,10 @@ The server does not persist transcripts or log request content. Browser speech s
 npm run dev
 npm run check
 npm test
+npm run smoke
 ```
 
-Tests cover fragmented UTF-8 SSE, incomplete responses, secret isolation, input validation, provider contract, independent cancellation, auth/origin/Host restrictions, and concurrent request limits. [Validation details and manual checks](docs/VALIDATION.md) distinguish simulated tests from actual provider and microphone testing. First text token timing is **not** end-to-end voice latency. No GPT-Live performance parity claim is made.
+Tests cover fragmented UTF-8 SSE, incomplete responses, secret isolation, input validation, provider contract, independent cancellation, auth/origin/Host restrictions, concurrent request limits, and client recovery. `npm run smoke` launches the documented `npm start` command with an explicitly empty provider key, checks assets and English/Korean demo streams, then stops its child processes. CI also builds and checks the Docker image with authentication. [Validation details and manual checks](docs/VALIDATION.md) distinguish simulated tests from actual provider and microphone testing. First text token timing is **not** end-to-end voice latency. No GPT-Live performance parity claim is made.
 
 ## Help make it better
 

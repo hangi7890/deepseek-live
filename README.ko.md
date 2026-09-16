@@ -51,6 +51,7 @@ npm start
 ```bash
 npm run check
 npm test
+npm run smoke
 ```
 
 버그 재현 사례, 음성 백엔드 통합, 한국어 UX, 접근성 개선을 환영합니다. 유용했다면 GitHub Star로 알려주세요. MIT 라이선스이며 DeepSeek·OpenAI와 공식 관계가 없습니다.
