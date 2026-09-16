@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101716">
+  <meta name="description" content="An open-source voice workspace powered by DeepSeek. Interrupt, explore, and keep talking while deeper reasoning runs in the background.">
+  <title>DeepSeek Live — Room to think.</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/" aria-label="DeepSeek Live home"><span class="brand-mark">≋</span> deepseek <b>live<span class="brand-dot">●</span></b></a>
+    <nav><span class="version">OPEN SOURCE · v0.1</span><button class="icon-button" id="settings-open" aria-label="Open settings">⚙ <span>Settings</span></button><a class="repo-link" href="https://github.com/hangi7890/deepseek-live" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
+  </header>
+  <main>
+    <section class="intro"><div><p class="eyebrow"><span class="signal-dot"></span> YOUR OPEN VOICE WORKSPACE</p><h1>Room to talk.<br><span>Space to think.</span></h1><p class="subtitle">A conversation that keeps moving.<br>Deeper thinking, on its own time.</p></div><div class="intro-note"><span class="note-line"></span><p>Interrupt the answer.<br>Follow a new thought.<br>Let the work continue.</p></div></section>
+    <div class="workspace">
+      <section class="voice-panel panel" aria-labelledby="voice-heading">
+        <div class="panel-heading"><h2 id="voice-heading"><span class="signal-dot"></span> Conversation</h2><span id="mode-badge" class="badge">CONNECTING</span></div>
+        <div class="orb-space"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orb" id="orb"><div class="orb-grain"></div><div class="waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
+        <div class="voice-state"><h3 id="voice-status" role="status">Make yourself heard.</h3><p id="voice-detail">Start with your voice, or type a thought below.</p></div>
+        <div class="voice-controls"><button id="mic" class="primary"><span aria-hidden="true">◉</span> Start listening</button><button id="interrupt" class="secondary" title="Stop the current reply (Escape)">■ Interrupt</button></div>
+        <div class="voice-meta"><span id="mic-state">MIC OFF</span><span class="divider">/</span><span id="voice-engine">BROWSER VOICE</span><span class="divider">/</span><span id="language-label">ENGLISH</span></div>
+        <p class="privacy-note">Voice recognition may use your browser’s cloud service.<br>Use headphones for reliable interruption.</p>
+        <div class="metrics"><div><span>FIRST TEXT TOKEN</span><strong id="latency">— <small>ms</small></strong></div><div><span>SESSION TURNS</span><strong id="turn-count">00</strong></div><div><span>REASONING</span><strong class="metric-small" id="job-metric">Ready</strong></div></div>
+      </section>
+      <section class="conversation-panel panel" aria-labelledby="transcript-heading">
+        <div class="panel-heading"><h2 id="transcript-heading">The conversation</h2><button id="reset" class="text-button">New session ↗</button></div>
+        <div class="transcript" id="transcript" role="log" aria-live="off"><div id="empty-state" class="empty-state"><span class="empty-symbol">“</span><h3>Every idea starts<br>with a little curiosity.</h3><p>Choose a starting point, or make your own.</p><div class="suggestions"><button data-prompt="Explain how a voice assistant can think in the background.">How does this work? <span>↗</span></button><button data-prompt="Help me practice a short job interview in English.">Practice an interview <span>↗</span></button><button data-prompt="Compare a cascaded voice pipeline with a native full-duplex model." data-deep="true">Explore the architecture <span>↗</span></button></div></div></div>
+        <div id="interim" class="interim" aria-live="polite"></div>
+        <form id="composer"><label class="sr-only" for="prompt">Your message</label><textarea id="prompt" rows="2" maxlength="8000" placeholder="What's on your mind?"></textarea><div class="composer-bottom"><button type="button" id="deep-toggle" class="chip" aria-pressed="false">✧ Deep think</button><span class="key-hint">Enter to send</span><button type="submit" id="send" aria-label="Send message">↑</button></div></form>
+      </section>
+      <aside class="tasks-panel panel" aria-labelledby="tasks-heading"><div class="panel-heading"><h2 id="tasks-heading">In the background</h2><span class="task-count" id="task-count">0</span></div><p class="task-intro">Longer thoughts get their own space.<br>Your conversation stays open.</p><div id="jobs"><div class="no-jobs" id="no-jobs"><div class="task-art" aria-hidden="true">✧</div><h3>A second train of thought.</h3><p>Turn on <b>Deep think</b> to run an analysis while you keep talking.</p></div></div><div class="architecture-note"><span>BUILT DIFFERENTLY</span><p>Voice + DeepSeek streaming<br>Independent reasoning requests<br>Cancellation for each stream</p><a href="https://github.com/hangi7890/deepseek-live/blob/main/docs/RESEARCH.ko.md" target="_blank" rel="noreferrer">Read the research ↗</a></div></aside>
+    </div>
+    <footer><span>Independent project. Inspired by the conversation / reasoning split.</span><span>Cascaded voice · Not a native full-duplex model</span></footer>
+    <div id="notice" role="status" class="notice" hidden></div>
+  </main>
+  <dialog id="settings"><form method="dialog" class="settings-form"><div class="panel-heading"><h2>Make it yours.</h2><button class="icon-button" aria-label="Close settings">✕</button></div><label for="language">Conversation language</label><select id="language"><option value="en">English</option><option value="ko">한국어</option></select><label for="voice-select">System voice</label><select id="voice-select"><option value="">Automatic</option></select><label class="check-label"><input type="checkbox" id="speak" checked> Read conversation replies aloud</label><label for="access-token">Workspace access token</label><input id="access-token" type="password" autocomplete="off" placeholder="Only required for shared hosting"><p>Kept in this tab’s memory. This is not your DeepSeek API key.</p><div class="setup-note"><b id="provider-label">Checking provider…</b><p>For real AI responses, set DEEPSEEK_API_KEY in the server’s .env file and restart. The key never belongs in this browser.</p></div><button class="primary">Done</button></form></dialog>
+</body></html>

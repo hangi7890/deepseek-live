@@ -1,0 +1,15 @@
+{
+  "name": "deepseek-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An interruptible voice workspace with DeepSeek and independent background reasoning.",
+  "type": "module",
+  "engines": { "node": ">=22.9" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "dev": "node --watch --env-file-if-exists=.env server.mjs",
+    "test": "node --test",
+    "check": "node --check server.mjs && node --check public/app.js && node --check lib/provider.mjs && node --check lib/validation.mjs && node --check public/protocol.js"
+  },
+  "license": "MIT"
+}
