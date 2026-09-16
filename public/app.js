@@ -5,6 +5,7 @@ const ui = Object.fromEntries(['mic', 'interrupt', 'orb', 'voice-status', 'voice
 let history = [], conversation = null, turn = 0, epoch = 0, deepMode = false, listening = false, recognition = null, restartTimer = null;
 let language = 'en', selectedVoice = '', spokenQueue = [], speaking = false, speechEpoch = 0, speechBuffer = '', utterance = null;
 let config = null, noticeTimer, partial = '', pendingFinal = '', finalTimer;
+let recognitionEpoch = 0;
 const jobs = new Map();
 const synth = window.speechSynthesis;
 
@@ -31,7 +32,7 @@ function pumpSpeech() {
   utterance.rate = 1;
   speaking = true; state('A thought, out loud.', 'Jump in whenever you want.');
   const ended = () => { if (generation !== speechEpoch) return; speaking = false; utterance = null; if (spokenQueue.length) pumpSpeech(); else if (!conversation) idle(); };
-  utterance.onend = ended; utterance.onerror = event => { ended(); if (!['canceled', 'interrupted'].includes(event.error)) notice('Speech playback unavailable. Your text reply is still here.'); };
+  utterance.onend = ended; utterance.onerror = event => { if (generation !== speechEpoch) return; ended(); if (!['canceled', 'interrupted'].includes(event.error)) notice('Speech playback unavailable. Your text reply is still here.'); };
   synth.speak(utterance);
 }
 function enqueue(text, flush = false) {
@@ -125,7 +126,8 @@ async function startJob(text) {
 }
 function setDeep(value) { deepMode = value; ui['deep-toggle'].setAttribute('aria-pressed', String(value)); }
 function stopListening() {
-  listening = false; clearTimeout(restartTimer); clearTimeout(finalTimer); pendingFinal = ''; partial = ''; recognition?.abort();
+  listening = false; recognitionEpoch++; clearTimeout(restartTimer); clearTimeout(finalTimer); pendingFinal = ''; partial = '';
+  const previous = recognition; recognition = null; previous?.abort();
   ui.mic.textContent = '◉ Start listening'; ui.mic.setAttribute('aria-pressed', 'false'); ui['mic-state'].textContent = 'MIC OFF'; ui.interim.textContent = ''; idle();
 }
 function startListening() {
@@ -133,10 +135,12 @@ function startListening() {
   if (!Recognition) { notice('Speech recognition is unavailable here. Try Chrome, or use text chat.'); return; }
   if (!window.isSecureContext) { notice('Microphone access needs HTTPS or localhost.'); return; }
   if (listening) { stopListening(); return; }
-  recognition = new Recognition(); recognition.lang = language === 'ko' ? 'ko-KR' : 'en-US'; recognition.continuous = true; recognition.interimResults = true;
+  const current = new Recognition(), generation = ++recognitionEpoch;
+  recognition = current; current.lang = language === 'ko' ? 'ko-KR' : 'en-US'; current.continuous = true; current.interimResults = true;
+  const isCurrent = () => listening && recognition === current && generation === recognitionEpoch;
   listening = true; ui.mic.textContent = '■ Stop listening'; ui.mic.setAttribute('aria-pressed', 'true'); ui['mic-state'].textContent = 'MIC ON'; idle();
-  recognition.onresult = event => {
-    if (!listening) return;
+  current.onresult = event => {
+    if (!isCurrent()) return;
     partial = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
       if (event.results[i].isFinal) pendingFinal += `${event.results[i][0].transcript} `;
@@ -147,15 +151,16 @@ function startListening() {
     if ((pendingFinal + partial).trim() && (conversation || speaking)) interrupt(false);
     clearTimeout(finalTimer);
     if (pendingFinal.trim() && !partial.trim()) finalTimer = setTimeout(() => {
-      if (!listening) return; const text = pendingFinal.trim(); pendingFinal = ''; ui.interim.textContent = ''; void send(text);
+      if (!isCurrent()) return; const text = pendingFinal.trim(); pendingFinal = ''; ui.interim.textContent = ''; void send(text);
     }, 650);
   };
-  recognition.onerror = event => {
+  current.onerror = event => {
+    if (!isCurrent()) return;
     if (event.error === 'aborted' || event.error === 'no-speech') return;
     stopListening(); notice(event.error === 'not-allowed' ? 'Microphone permission denied. Allow it in your browser or use text.' : `Speech recognition stopped: ${event.error}. Text chat is available.`);
   };
-  recognition.onend = () => { if (listening) restartTimer = setTimeout(() => { if (!listening) return; try { recognition.start(); } catch { stopListening(); notice('Restart listening to reconnect the microphone.'); } }, 250); };
-  try { recognition.start(); } catch { stopListening(); notice('Could not start microphone recognition. Use text or try Chrome.'); }
+  current.onend = () => { if (isCurrent()) restartTimer = setTimeout(() => { if (!isCurrent()) return; try { current.start(); } catch { stopListening(); notice('Restart listening to reconnect the microphone.'); } }, 250); };
+  try { current.start(); } catch { stopListening(); notice('Could not start microphone recognition. Use text or try Chrome.'); }
 }
 function loadVoices() {
   ui['voice-select'].replaceChildren(new Option('Automatic', ''));

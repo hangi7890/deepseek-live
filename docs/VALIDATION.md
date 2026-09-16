@@ -6,7 +6,7 @@ Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium brow
 
 `npm run check`: JavaScript syntax checks passed.
 
-`npm test`: **16 tests passed**, including:
+`npm test`: **25 tests passed** after the first stability milestone (the original release had 16), including:
 
 - Fragmented UTF-8 Korean and CRLF SSE; multiline data and heartbeat comments.
 - Oversized or truncated SSE frames; missing provider terminal marker.
@@ -18,6 +18,9 @@ Date: 2026-09-16. Environment: macOS, Node.js 25.9.0, Codex in-app Chromium brow
 - SSE timing and completion events.
 - Foreground cancellation leaves a concurrent analysis running.
 - Active request concurrency limit.
+- Actual client source executed against deterministic DOM, recognition, synthesis, timer, and fetch doubles: microphone restart races, pending transcript cancellation, rapid request replacement, independent analysis cancellation, session reset, stale speech callbacks, muted chunks, incomplete streams, and analysis concurrency.
+
+The nine client tests were also run against the original `a2b39ee` app source in an isolated temporary fixture. Two failed: an old recognition error aborted the replacement microphone, and a cancelled utterance emitted a late error notice. Both pass with the fixes. The complete current suite passes 25/25 locally. This proves the simulated lifecycle cases, not real microphone or acoustic quality. Remote CI for these changes must be checked separately from the initial release CI linked above.
 
 Provider tests use a mock fetch implementation; server tests run real local HTTP streams with deterministic providers. They do not incur API charges or establish real-world model performance.
 
